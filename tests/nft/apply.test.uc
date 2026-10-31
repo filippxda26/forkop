@@ -40,6 +40,10 @@ t.test("the base table captures the source interfaces, FakeIP and the TProxy inb
     has(lines, "add chain inet ForkopTable mangle { type filter hook prerouting priority -149; policy accept; }", "mangle runs after the Tailscale connmark restore");
     has(lines, T + "priority_output_rules meta mark != 0 return", "a provider mark is preserved");
     has(lines, "add chain inet ForkopTable dns_redirect { type nat hook prerouting priority -101; policy accept; }");
+    const localIpv6Dns = T + "dns_redirect iifname @forkop_interfaces meta nfproto ipv6 fib daddr type local udp dport 53 counter dnat ip6 addr . port to ip6 daddr . 1603";
+    has(lines, localIpv6Dns, "DNS to a local IPv6 address preserves the destination address during port translation");
+    before(lines, localIpv6Dns, T + "dns_redirect iifname @forkop_interfaces udp dport 53 counter redirect to :1603",
+        "local IPv6 DNS port translation precedes the catch-all redirect");
     has(lines, T + "dns_redirect iifname @forkop_interfaces udp dport 53 counter redirect to :1603");
     has(lines, T + "dns_redirect iifname @forkop_interfaces tcp dport 53 counter redirect to :1603");
     has(lines, T + "mangle iifname @forkop_interfaces ip6 daddr @localv6 return", "local IPv6 is left alone");
