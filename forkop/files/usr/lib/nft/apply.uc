@@ -160,12 +160,11 @@ function add_base(settings, excluded_router, excluded) {
     add_chain("dns_redirect", "{ type nat hook prerouting priority " + constants.NFT_DNS_REDIRECT_PRIORITY + "; policy accept; }");
     add_rule("dns_redirect", [ "jump", PAUSE_CHAIN ]);
     add_excluded_returns("dns_redirect", excluded);
-    // IPv6 REDIRECT uses the first suitable address on the incoming interface.
-    // When the router has both a GUA and a ULA, that may not be the address
-    // the client queried. Keep that address for local UDP DNS so conntrack
-    // can translate replies from :1603 back to :53.
+    // IPv6 REDIRECT may pick a different address than the router's queried ULA
+    // when the interface has several global-scope addresses. Let dnsmasq handle
+    // DNS sent to the router itself; keep intercepting external DNS destinations.
     add_rule("dns_redirect", [ "iifname", "@" + INTERFACES, "meta", "nfproto", "ipv6", "fib", "daddr", "type", "local",
-        "udp", "dport", "53", "counter", "dnat", "ip6", "addr", ".", "port", "to", "ip6", "daddr", ".", singbox_constants.SOURCE_DNS_INBOUND_PORT ]);
+        "udp", "dport", "53", "counter", "return" ]);
     for (let proto in [ "tcp", "udp" ])
         add_rule("dns_redirect", [ "iifname", "@" + INTERFACES, proto, "dport", "53", "counter", "redirect", "to", ":" + singbox_constants.SOURCE_DNS_INBOUND_PORT ]);
 
