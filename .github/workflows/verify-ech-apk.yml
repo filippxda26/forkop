@@ -1,0 +1,72 @@
+name: Verify ECH APK packages
+
+# Manual smoke test only. Does not create a tag or a GitHub Release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test and build OpenWrt 25.12.5 APK packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5.0.0
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake curl fakeroot file gawk git libjson-c-dev patch perl pkg-config tar unzip util-linux xz-utils zstd
+
+      - name: Build ucode for backend tests
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v0.0.20250529 https://github.com/jow-/ucode.git /tmp/ucode
+          cmake -S /tmp/ucode -B /tmp/ucode/build \
+            -DUBUS_SUPPORT=OFF \
+            -DUCI_SUPPORT=OFF \
+            -DULOOP_SUPPORT=OFF
+          cmake --build /tmp/ucode/build --parallel
+          sudo cmake --install /tmp/ucode/build
+          sudo ldconfig
+
+      - name: Validate ucode and run backend tests
+        shell: bash
+        run: |
+          find forkop/files/usr/lib -name '*.uc' -print0 | xargs -0 -n1 ucode -c -o /dev/null
+          find forkop/files/usr/lib -name '*.uc' -print0 | xargs -0 -n1 ucode -S -c -o /dev/null
+          tests/run.sh
+
+      - name: Build test packages
+        shell: bash
+        run: |
+          # Test-only version; no release is published by this workflow.
+          ./build.sh 2.0.1 "$PWD/test-release"
+
+      - name: Verify APK files and checksums
+        shell: bash
+        run: |
+          test -s test-release/forkop_2.0.1_all.apk
+          test -s test-release/luci-app-forkop_2.0.1_all.apk
+          test -s test-release/luci-i18n-forkop-ru_2.0.1_all.apk
+          (
+            cd test-release
+            sha256sum ./*.apk > APK-SHA256SUMS
+            sha256sum -c APK-SHA256SUMS
+          )
+
+      - name: Upload test APKs
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ech-apk-test-openwrt-25.12.5
+          path: |
+            test-release/*.apk
+            test-release/APK-SHA256SUMS
+          retention-days: 7
+          if-no-files-found: error
