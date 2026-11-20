@@ -26,7 +26,7 @@
 
 set -u
 
-FORKOP_REPO=ushan0v/forkop
+FORKOP_REPO=filippxda26/forkop
 CORE_REPO=ushan0v/sing-box-forkop
 # github.com answers a release link with a header line longer than uclient-fetch reads
 API_URL=https://api.github.com
