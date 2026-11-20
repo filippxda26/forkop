@@ -43,6 +43,29 @@ jobs:
           find forkop/files/usr/lib -name '*.uc' -print0 | xargs -0 -n1 ucode -S -c -o /dev/null
           tests/run.sh
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v5.0.0
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frontend dependencies
+        working-directory: fe-app-forkop
+        run: yarn install --frozen-lockfile
+
+      - name: Test and regenerate LuCI frontend
+        working-directory: fe-app-forkop
+        run: |
+          yarn test --run
+          yarn build
+
+      - name: Check ECH setting is in the compiled LuCI bundle
+        shell: bash
+        run: |
+          grep -q 'dns_https_records_enabled' luci-app-forkop/htdocs/luci-static/resources/view/forkop/main.js
+
       - name: Build test packages
         shell: bash
         run: |
@@ -60,6 +83,14 @@ jobs:
             sha256sum ./*.apk > APK-SHA256SUMS
             sha256sum -c APK-SHA256SUMS
           )
+
+      - name: Upload generated LuCI bundle for review
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ech-generated-luci-bundle
+          path: luci-app-forkop/htdocs/luci-static/resources/view/forkop/main.js
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Upload test APKs
         uses: actions/upload-artifact@v4.6.2
