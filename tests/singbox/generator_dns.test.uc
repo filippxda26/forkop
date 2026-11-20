@@ -108,6 +108,26 @@ t.test("no records, no hosts server", () => {
 const DNS = { dns_server: [ "77.88.8.8" ], bootstrap_dns_server: [ "77.88.8.8" ] };
 const BYPASS = [ { ".name": "direct", enabled: "1", action: "bypass", destinations: "example.org" } ];
 
+t.test("HTTPS DNS records are rejected by default and can be enabled for ECH", () => {
+    let baseline = build({ settings: DNS, section: BYPASS });
+    t.eq(baseline.dns.rules[0], { action: "reject", query_type: "HTTPS" }, "the default remains unchanged");
+    let disabled = build({ settings: { ...DNS, dns_https_records_enabled: "0" }, section: BYPASS });
+    t.eq(disabled.dns.rules[0], baseline.dns.rules[0], "an explicit off switch also rejects HTTPS records");
+
+    let enabled = build({ settings: { ...DNS, dns_https_records_enabled: "1" }, section: BYPASS });
+    t.eq(q.dns_rule(enabled, (r) => r.action == "reject" && r.query_type == "HTTPS"), null,
+        "HTTPS records are no longer globally rejected");
+    t.eq(enabled.dns.rules[0], { action: "reject", domain_suffix: "use-application-dns.net" },
+        "the application DNS block is not relaxed");
+    t.ok(q.dns_rule(enabled, (r) => r.server == "fakeip-server" && q.has(r.query_type, "A") && q.has(r.query_type, "AAAA")) != null,
+        "FakeIP still applies to address requests");
+    t.ok(q.dns_rule(enabled, (r) => r.server == "dnsmasq-server" && r.domain_suffix == ".lan") != null,
+        "the local DNS zone remains local");
+    t.ok(q.dns_rule(enabled, (r) => r.server == "dns-server" && q.has(r.inbound, "source-dns-in") && r.query_type == null &&
+        r.domain_regex == null && r.domain_suffix == null) != null,
+        "unmatched client queries still reach the configured DNS server");
+});
+
 t.test("a DNS inbound refuses what is not hijacked", () => {
     let config = build({ settings: DNS, section: BYPASS });
     let hijack = q.route_rule_index(config, (r) => r.action == "hijack-dns");

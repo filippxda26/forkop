@@ -82,6 +82,17 @@ export function addDnsOptions(section: CBISection) {
 
   o = section.option(
     form.Flag,
+    'dns_https_records_enabled',
+    _('Allow HTTPS DNS records (ECH)'),
+    _(
+      'Allow type HTTPS (65) DNS answers used for ECH. May affect HTTP/3 and routing; ECH also requires browser and site support.',
+    ),
+  );
+  o.default = '0';
+  o.rmempty = false;
+
+  o = section.option(
+    form.Flag,
     'dns_detour_enabled',
     _('DNS through section'),
     _('Route main DNS requests through a section'),

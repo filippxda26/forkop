@@ -240,17 +240,18 @@ function base_config(settings, service_address) {
     if (dns_config.unsupported)
         runtime_generate_unsupported(dns_config.unsupported);
 
-    let dns_rules = [
-        { action: "reject", query_type: "HTTPS" },
-        { action: "reject", domain_suffix: "use-application-dns.net" },
-        {
-            action: "route",
-            server: runtime_constants.FAKEIP_DNS_SERVER_TAG,
-            rewrite_ttl,
-            query_type: FAKEIP_QUERY_TYPES,
-            domain: [ runtime_constants.FAKEIP_TEST_DOMAIN, runtime_constants.CHECK_PROXY_IP_DOMAIN ]
-        }
-    ];
+    let dns_rules = [];
+    // HTTPS records can carry ECH parameters, but keep the existing behavior unless enabled.
+    if (!bool_option(settings, "dns_https_records_enabled", false))
+        push(dns_rules, { action: "reject", query_type: "HTTPS" });
+    push(dns_rules, { action: "reject", domain_suffix: "use-application-dns.net" });
+    push(dns_rules, {
+        action: "route",
+        server: runtime_constants.FAKEIP_DNS_SERVER_TAG,
+        rewrite_ttl,
+        query_type: FAKEIP_QUERY_TYPES,
+        domain: [ runtime_constants.FAKEIP_TEST_DOMAIN, runtime_constants.CHECK_PROXY_IP_DOMAIN ]
+    });
     let ntp_servers = ntp_server_names();
     if (length(ntp_servers) > 0)
         push(dns_rules, { inbound: runtime_constants.SYSTEM_DNS_INBOUND_TAG, action: "route", server: runtime_constants.BOOTSTRAP_DNS_SERVER_TAG, domain: ntp_servers });
