@@ -398,6 +398,14 @@ msgstr ""
 msgid "All traffic through the server"
 msgstr ""
 
+#: fe-app-forkop/src/forkop/tabs/settings/form/dns.ts
+msgid "Allow HTTPS DNS records (ECH)"
+msgstr ""
+
+#: fe-app-forkop/src/forkop/tabs/settings/form/dns.ts
+msgid "Allow type HTTPS (65) DNS answers used for ECH. May affect HTTP/3 and routing; ECH also requires browser and site support."
+msgstr ""
+
 #: fe-app-forkop/src/forkop/tabs/sections/tunnels/dialog.ts
 msgid "Allowed IPs"
 msgstr ""

@@ -296,6 +296,12 @@ msgstr "Весь трафик устройства принудительно п
 msgid "All traffic through the server"
 msgstr "Весь трафик через сервер"
 
+msgid "Allow HTTPS DNS records (ECH)"
+msgstr "Разрешить DNS-записи HTTPS (ECH)"
+
+msgid "Allow type HTTPS (65) DNS answers used for ECH. May affect HTTP/3 and routing; ECH also requires browser and site support."
+msgstr "Разрешить DNS-ответы типа HTTPS (65), используемые для ECH. Может повлиять на HTTP/3 и маршрутизацию; ECH также требует поддержки браузером и сайтом."
+
 msgid "Allowed IPs"
 msgstr "Разрешённые IP-адреса"
 
